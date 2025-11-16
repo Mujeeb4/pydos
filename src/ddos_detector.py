@@ -40,7 +40,8 @@ try:
         NETWORK_INTERFACE,
         PACKET_THRESHOLD,
         SYN_THRESHOLD,
-        TIME_WINDOW
+        TIME_WINDOW,
+        ALLOW_LOOPBACK_DETECTION
     )
 except ImportError:
     # Fallback defaults if config not available
@@ -48,6 +49,7 @@ except ImportError:
     PACKET_THRESHOLD = 100
     SYN_THRESHOLD = 50
     TIME_WINDOW = 5.0
+    ALLOW_LOOPBACK_DETECTION = False  # Default to False for production safety
 
 # --- DATA STRUCTURES ---
 # Use locks to make dictionary access thread-safe
@@ -155,7 +157,8 @@ def create_status_panel() -> Panel:
     status_text = Text()
     status_text.append("System Status\n", style="bold underline cyan")
     status_text.append(f"Interface: ", style="bold")
-    status_text.append(f"{NETWORK_INTERFACE}\n", style="cyan")
+    status_text.append(f"{NETWORK_INTERFACE} ", style="cyan")
+    status_text.append("(auto-detected)\n", style="dim italic")
     status_text.append(f"Uptime: ", style="bold")
     status_text.append(f"{uptime_str}\n", style="green")
     status_text.append(f"Total Packets: ", style="bold")
@@ -254,6 +257,16 @@ def process_packet(packet):
         # Basic packet validation
         if not src_ip or src_ip == "0.0.0.0":
             return
+        
+        # Import utility function for IP checking
+        from utils import is_private_or_localhost
+        
+        # Skip loopback/private IPs unless testing mode is enabled
+        if not ALLOW_LOOPBACK_DETECTION:
+            if is_private_or_localhost(src_ip):
+                # In production mode, skip private/loopback IPs to avoid false positives
+                # from local services (databases, web servers, etc.)
+                return
         
         # Check blocked IPs cache first (faster than acquiring mitigator lock)
         with blocked_cache_lock:
@@ -355,11 +368,11 @@ if __name__ == "__main__":
     console.print(create_thresholds_panel())
     
     console.print("\n[bold green]🛡️  Mitigation: ENABLED[/bold green] (iptables)")
-    console.print("[bold yellow]� Logging: ENABLED[/bold yellow] (logs/ directory)")
+    console.print("[bold yellow]📝 Logging: ENABLED[/bold yellow] (logs/ directory)")
     console.print("[bold yellow]⚠️  Warning: Malicious IPs will be automatically blocked![/bold yellow]")
     console.print("\n[dim]Press Ctrl+C to stop[/dim]\n")
     
-    logger.log_system_event("DDoS Detection System fully initialized")
+    logger.log_system_event(f"DDoS Detection System initialized on interface: {NETWORK_INTERFACE} (auto-detected)")
     
     # Start the count reset timer
     console.print(f"[cyan]Starting {TIME_WINDOW}s traffic monitoring...[/cyan]\n")

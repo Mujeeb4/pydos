@@ -7,7 +7,9 @@ This module provides common utility functions used across the system.
 import ipaddress
 import os
 import json
-from typing import Optional, Dict, Any
+import platform
+import subprocess
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 from datetime import datetime
 
@@ -163,6 +165,129 @@ def calculate_uptime(start_time: datetime) -> str:
     return str(uptime).split('.')[0]  # Remove microseconds
 
 
+def get_network_interfaces() -> List[Dict[str, str]]:
+    """
+    Get list of available network interfaces on the system.
+    
+    Returns:
+        list: List of dictionaries containing interface info (name, status, type)
+    """
+    interfaces = []
+    system = platform.system()
+    
+    try:
+        if system == "Linux":
+            # Use ip command to get interfaces
+            result = subprocess.run(
+                ["ip", "-o", "link", "show"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            for line in result.stdout.strip().split('\n'):
+                if not line:
+                    continue
+                    
+                parts = line.split(': ')
+                if len(parts) >= 2:
+                    iface_name = parts[1].split('@')[0]  # Remove @if123 suffix
+                    
+                    # Skip loopback interface
+                    if iface_name == 'lo':
+                        continue
+                    
+                    # Determine if interface is up
+                    is_up = 'UP' in line and 'state UP' in line
+                    
+                    # Determine interface type
+                    iface_type = 'unknown'
+                    if iface_name.startswith('eth') or iface_name.startswith('enp'):
+                        iface_type = 'ethernet'
+                    elif iface_name.startswith('wl') or iface_name.startswith('wlp'):
+                        iface_type = 'wireless'
+                    elif iface_name.startswith('docker') or iface_name.startswith('br-'):
+                        iface_type = 'virtual'
+                    elif iface_name.startswith('veth'):
+                        iface_type = 'virtual'
+                    
+                    interfaces.append({
+                        'name': iface_name,
+                        'status': 'up' if is_up else 'down',
+                        'type': iface_type
+                    })
+        
+        elif system == "Windows":
+            # Use ipconfig to get interfaces
+            result = subprocess.run(
+                ["ipconfig"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            # Parse Windows interface names (simplified)
+            for line in result.stdout.split('\n'):
+                if 'adapter' in line.lower():
+                    # Extract interface name
+                    parts = line.split('adapter')
+                    if len(parts) >= 2:
+                        iface_name = parts[1].strip().rstrip(':')
+                        interfaces.append({
+                            'name': iface_name,
+                            'status': 'unknown',
+                            'type': 'unknown'
+                        })
+    
+    except Exception as e:
+        # Fallback: return empty list if detection fails
+        pass
+    
+    return interfaces
+
+
+def get_default_network_interface() -> Optional[str]:
+    """
+    Automatically detect the default/active network interface.
+    
+    Returns:
+        str: Name of default network interface, or None if detection fails
+    """
+    interfaces = get_network_interfaces()
+    
+    if not interfaces:
+        return None
+    
+    # Priority order:
+    # 1. First active (up) ethernet interface
+    # 2. First active wireless interface
+    # 3. First active interface of any type
+    # 4. First interface regardless of status
+    
+    # Check for active ethernet
+    for iface in interfaces:
+        if iface['status'] == 'up' and iface['type'] == 'ethernet':
+            return iface['name']
+    
+    # Check for active wireless
+    for iface in interfaces:
+        if iface['status'] == 'up' and iface['type'] == 'wireless':
+            return iface['name']
+    
+    # Check for any active non-virtual interface
+    for iface in interfaces:
+        if iface['status'] == 'up' and iface['type'] != 'virtual':
+            return iface['name']
+    
+    # Check for any active interface
+    for iface in interfaces:
+        if iface['status'] == 'up':
+            return iface['name']
+    
+    # Return first interface regardless of status
+    return interfaces[0]['name'] if interfaces else None
+
+
 # Test the module if run directly
 if __name__ == "__main__":
     print("="*70)
@@ -197,6 +322,16 @@ if __name__ == "__main__":
     from datetime import timedelta
     past_time = datetime.now() - timedelta(hours=2, minutes=30, seconds=45)
     print(f"  Uptime: {calculate_uptime(past_time)}")
+    
+    print()
+    print("Test 6: Network interface detection")
+    interfaces = get_network_interfaces()
+    print(f"  Found {len(interfaces)} network interface(s):")
+    for iface in interfaces:
+        print(f"    - {iface['name']:20} Status: {iface['status']:10} Type: {iface['type']}")
+    
+    default_iface = get_default_network_interface()
+    print(f"\n  Default interface: {default_iface}")
     
     print()
     print("="*70)
