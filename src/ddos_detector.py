@@ -40,6 +40,7 @@ try:
         NETWORK_INTERFACE,
         PACKET_THRESHOLD,
         SYN_THRESHOLD,
+        UDP_THRESHOLD,
         TIME_WINDOW,
         ALLOW_LOOPBACK_DETECTION
     )
@@ -48,6 +49,7 @@ except ImportError:
     NETWORK_INTERFACE = "wlp1s0"
     PACKET_THRESHOLD = 100
     SYN_THRESHOLD = 50
+    UDP_THRESHOLD = 50
     TIME_WINDOW = 5.0
     ALLOW_LOOPBACK_DETECTION = False  # Default to False for production safety
 
@@ -56,6 +58,7 @@ except ImportError:
 counts_lock = threading.Lock()
 ip_packet_counts = defaultdict(int)
 ip_syn_counts = defaultdict(int)
+ip_udp_counts = defaultdict(int)  # Track UDP packets for UDP flood detection
 
 # File lock for stats.json to prevent corruption
 stats_file_lock = threading.Lock()
@@ -76,7 +79,7 @@ attacked_ips_lock = threading.Lock()
 # Initialize comprehensive logging
 logger = get_logger()
 logger.log_system_event("Initializing DDoS Detection System")
-logger.log_threshold_config(PACKET_THRESHOLD, SYN_THRESHOLD, TIME_WINDOW)
+logger.log_threshold_config(PACKET_THRESHOLD, SYN_THRESHOLD, TIME_WINDOW, UDP_THRESHOLD)
 
 # --- RICH CONSOLE (Phase 6) ---
 # Initialize Rich console for beautiful CLI output
@@ -105,7 +108,8 @@ def create_dashboard() -> Table:
     
     table.add_column("IP Address", style="cyan", width=18)
     table.add_column("Packets", justify="right", style="green", width=10)
-    table.add_column("SYN Count", justify="right", style="yellow", width=10)
+    table.add_column("SYN", justify="right", style="yellow", width=8)
+    table.add_column("UDP", justify="right", style="blue", width=8)
     table.add_column("Status", justify="center", style="bold", width=15)
     
     with counts_lock:
@@ -116,15 +120,16 @@ def create_dashboard() -> Table:
             
             for ip, count in sorted_ips:
                 syn_count = ip_syn_counts.get(ip, 0)
+                udp_count = ip_udp_counts.get(ip, 0)
                 
                 # Determine status
                 if mitigator.is_blocked(ip):
                     status = "[red]🔒 BLOCKED[/red]"
                     row_style = "dim"
-                elif count > PACKET_THRESHOLD or syn_count > SYN_THRESHOLD:
+                elif count > PACKET_THRESHOLD or syn_count > SYN_THRESHOLD or udp_count > UDP_THRESHOLD:
                     status = "[red]⚠️  ALERT[/red]"
                     row_style = "bold red"
-                elif count > PACKET_THRESHOLD * 0.7 or syn_count > SYN_THRESHOLD * 0.7:
+                elif count > PACKET_THRESHOLD * 0.7 or syn_count > SYN_THRESHOLD * 0.7 or udp_count > UDP_THRESHOLD * 0.7:
                     status = "[yellow]⚡ WARNING[/yellow]"
                     row_style = "yellow"
                 else:
@@ -135,11 +140,12 @@ def create_dashboard() -> Table:
                     ip,
                     str(count),
                     str(syn_count),
+                    str(udp_count),
                     status,
                     style=row_style
                 )
         else:
-            table.add_row("No traffic", "-", "-", "[dim]Idle[/dim]")
+            table.add_row("No traffic", "-", "-", "-", "[dim]Idle[/dim]")
     
     return table
 
@@ -184,6 +190,8 @@ def create_thresholds_panel() -> Panel:
     threshold_text.append(f"{PACKET_THRESHOLD} per {TIME_WINDOW}s\n", style="cyan")
     threshold_text.append(f"SYN Limit: ", style="bold")
     threshold_text.append(f"{SYN_THRESHOLD} per {TIME_WINDOW}s\n", style="cyan")
+    threshold_text.append(f"UDP Limit: ", style="bold")
+    threshold_text.append(f"{UDP_THRESHOLD} per {TIME_WINDOW}s\n", style="cyan")
     threshold_text.append(f"Time Window: ", style="bold")
     threshold_text.append(f"{TIME_WINDOW} seconds", style="cyan")
     
@@ -196,7 +204,7 @@ shutdown_flag = threading.Event()
 
 def reset_counts():
     """Resets the traffic counters every TIME_WINDOW seconds and displays dashboard"""
-    global ip_packet_counts, ip_syn_counts, attacked_ips_this_window, reset_timer
+    global ip_packet_counts, ip_syn_counts, ip_udp_counts, attacked_ips_this_window, reset_timer
     
     if shutdown_flag.is_set():
         return  # Stop if shutdown requested
@@ -208,6 +216,7 @@ def reset_counts():
                 "unique_ips": len(ip_packet_counts),
                 "total_packets": sum(ip_packet_counts.values()),
                 "total_syn": sum(ip_syn_counts.values()),
+                "total_udp": sum(ip_udp_counts.values()),
                 "top_talker": max(ip_packet_counts.items(), key=lambda x: x[1])[0]
             }
             logger.log_traffic_summary(summary_data)
@@ -232,6 +241,7 @@ def reset_counts():
         # Clear counts for next window
         ip_packet_counts.clear()
         ip_syn_counts.clear()
+        ip_udp_counts.clear()
     
     # Clear attacked IPs tracking for new window
     with attacked_ips_lock:
@@ -276,8 +286,10 @@ def process_packet(packet):
         # Variables to track if attack detected
         packet_flood_detected = False
         syn_flood_detected = False
+        udp_flood_detected = False
         current_packet_count = 0
         current_syn_count = 0
+        current_udp_count = 0
         
         # Update counts with thread lock AND check thresholds atomically
         with counts_lock:
@@ -291,9 +303,17 @@ def process_packet(packet):
             else:
                 current_syn_count = ip_syn_counts[src_ip]
             
+            # Check for UDP packets (potential UDP flood)
+            if packet.haslayer(UDP):
+                ip_udp_counts[src_ip] += 1
+                current_udp_count = ip_udp_counts[src_ip]
+            else:
+                current_udp_count = ip_udp_counts[src_ip]
+            
             # Check thresholds inside lock to prevent race condition
             packet_flood_detected = current_packet_count > PACKET_THRESHOLD
             syn_flood_detected = current_syn_count > SYN_THRESHOLD
+            udp_flood_detected = current_udp_count > UDP_THRESHOLD
         
         # Now handle attacks outside the lock
         attack_detected = False
@@ -304,7 +324,7 @@ def process_packet(packet):
                 # Already counted this IP's attack in this window
                 return
             
-            if packet_flood_detected or syn_flood_detected:
+            if packet_flood_detected or syn_flood_detected or udp_flood_detected:
                 # Mark this IP as having attacked in this window
                 attacked_ips_this_window.add(src_ip)
                 attack_detected = True
@@ -315,34 +335,42 @@ def process_packet(packet):
         # Increment attack counter only once per IP per window
         stats["total_attacks_detected"] += 1
         
-        # Determine attack type
-        if packet_flood_detected and syn_flood_detected:
-            attack_type = "PACKET_FLOOD + SYN_FLOOD"
-        elif packet_flood_detected:
-            attack_type = "PACKET_FLOOD"
-        else:
-            attack_type = "SYN_FLOOD"
+        # Determine attack type(s) - can be multiple simultaneous attacks
+        attack_types = []
+        if packet_flood_detected:
+            attack_types.append("PACKET_FLOOD")
+        if syn_flood_detected:
+            attack_types.append("SYN_FLOOD")
+        if udp_flood_detected:
+            attack_types.append("UDP_FLOOD")
+        
+        attack_type = " + ".join(attack_types)
         
         # Log the attack
         logger.log_attack_detected(
             ip_address=src_ip,
             attack_type=attack_type,
             threshold=PACKET_THRESHOLD if packet_flood_detected else SYN_THRESHOLD,
-            current_count=current_packet_count if packet_flood_detected else current_syn_count,
+            current_count=current_packet_count if packet_flood_detected else (current_syn_count if syn_flood_detected else current_udp_count),
             additional_info={
                 "destination_ip": dst_ip,
-                "destination_port": packet[TCP].dport if packet.haslayer(TCP) else None,
+                "destination_port": (packet[TCP].dport if packet.haslayer(TCP) 
+                                    else packet[UDP].dport if packet.haslayer(UDP) 
+                                    else None),
                 "time_window": TIME_WINDOW,
                 "packet_count": current_packet_count,
-                "syn_count": current_syn_count
+                "syn_count": current_syn_count,
+                "udp_count": current_udp_count
             }
         )
         
         console.print(f"\n[bold red]🚨 ALERT: {attack_type} detected from {src_ip}[/bold red]")
         if packet_flood_detected:
-            console.print(f"[yellow]   Packet Count: {current_packet_count} (threshold: {PACKET_THRESHOLD})[/yellow]")
+            console.print(f"[yellow]   Total Packets: {current_packet_count} (threshold: {PACKET_THRESHOLD})[/yellow]")
         if syn_flood_detected:
-            console.print(f"[yellow]   SYN Count: {current_syn_count} (threshold: {SYN_THRESHOLD})[/yellow]")
+            console.print(f"[yellow]   SYN Packets: {current_syn_count} (threshold: {SYN_THRESHOLD})[/yellow]")
+        if udp_flood_detected:
+            console.print(f"[yellow]   UDP Packets: {current_udp_count} (threshold: {UDP_THRESHOLD})[/yellow]")
         console.print()
         
         # Phase 4: Call mitigation module to block IP

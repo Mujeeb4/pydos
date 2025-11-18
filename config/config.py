@@ -10,6 +10,7 @@ NETWORK_INTERFACE = _AUTO_DETECTED_INTERFACE if _AUTO_DETECTED_INTERFACE else "e
 # Detection Thresholds
 PACKET_THRESHOLD = 100  # Packets per time window to trigger packet flood alert
 SYN_THRESHOLD = 50      # SYN packets per time window to trigger SYN flood alert
+UDP_THRESHOLD = 50      # UDP packets per time window to trigger UDP flood alert
 
 # Time Window (seconds)
 TIME_WINDOW = 5.0  # Reset counters every 5 seconds

@@ -233,7 +233,7 @@ class DDoSLogger:
             "data": summary_data
         })
     
-    def log_threshold_config(self, packet_threshold: int, syn_threshold: int, time_window: float):
+    def log_threshold_config(self, packet_threshold: int, syn_threshold: int, time_window: float, udp_threshold: int = None):
         """
         Log threshold configuration.
         
@@ -241,13 +241,23 @@ class DDoSLogger:
             packet_threshold (int): Packet threshold
             syn_threshold (int): SYN threshold
             time_window (float): Time window in seconds
+            udp_threshold (int): UDP threshold (optional)
         """
-        message = (
-            f"CONFIGURATION | "
-            f"Packet Threshold: {packet_threshold} | "
-            f"SYN Threshold: {syn_threshold} | "
-            f"Time Window: {time_window}s"
-        )
+        if udp_threshold is not None:
+            message = (
+                f"CONFIGURATION | "
+                f"Packet Threshold: {packet_threshold} | "
+                f"SYN Threshold: {syn_threshold} | "
+                f"UDP Threshold: {udp_threshold} | "
+                f"Time Window: {time_window}s"
+            )
+        else:
+            message = (
+                f"CONFIGURATION | "
+                f"Packet Threshold: {packet_threshold} | "
+                f"SYN Threshold: {syn_threshold} | "
+                f"Time Window: {time_window}s"
+            )
         self.system_logger.info(message)
     
     def log_error(self, error_message: str, exception: Optional[Exception] = None):

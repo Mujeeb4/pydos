@@ -6,7 +6,7 @@ A Python-based real-time DDoS detection and mitigation system using traffic anal
 
 This system monitors network traffic in real-time, detects potential DDoS attacks using threshold-based rules, automatically mitigates threats by blocking malicious IPs using iptables, and provides beautiful monitoring dashboards with comprehensive logging.
 
-## ✨ Features
+## Features
 
 - **Real-time Traffic Monitoring**: Captures and analyzes network packets using Scapy
 - **Attack Detection**: Identifies DDoS patterns (SYN floods, packet floods)
@@ -17,18 +17,18 @@ This system monitors network traffic in real-time, detects potential DDoS attack
 - **RESTful API**: Access system data programmatically
 - **Extensible Architecture**: Modular design for easy enhancement
 
-## 🚀 Current Development Status
+## Current Development Status
 
-**Phases Completed: 4/5 (80%)** ✅
+**Phases Completed: 4/5 (80%)** 
 
-- ✅ **Phase 1**: Environment Setup & Foundations (100%)
-- ✅ **Phase 2**: Traffic Capture Module (100%)
-- ✅ **Phase 3**: Detection Engine (100%)
-- ✅ **Phase 4**: Mitigation Module (100%)
-- ⏭️ **Phase 5**: Testing & Simulation (Pending)
-- ✅ **Phase 6**: Logging & Monitoring (100%)
-- ⏭️ **Phase 7**: Project Finalization (Pending)
-- ⏭️ **Phase 8**: ML Model Integration (Optional)
+- **Phase 1**: Environment Setup & Foundations (100%)
+- **Phase 2**: Traffic Capture Module (100%)
+- **Phase 3**: Detection Engine (100%)
+- **Phase 4**: Mitigation Module (100%)
+- **Phase 5**: Testing & Simulation (Pending)
+- **Phase 6**: Logging & Monitoring (100%)
+- **Phase 7**: Project Finalization (Pending)
+- **Phase 8**: ML Model Integration (Optional)
 
 ## Quick Start (Phase 1)
 
@@ -68,7 +68,7 @@ All dependencies are listed in `requirements.txt`:
 - joblib - Model persistence
 - flask - Web dashboard (optional, Phase 6)
 
-## 📋 System Requirements
+## System Requirements
 
 - **Operating System**: Ubuntu 22.04 LTS (or any Linux distro)
 - **Python**: 3.8 or higher
@@ -77,7 +77,7 @@ All dependencies are listed in `requirements.txt`:
 - **RAM**: 2GB minimum, 4GB recommended
 - **Disk Space**: 500MB for logs and system files
 
-## 🔧 Installation
+## Installation
 
 ### 1. Clone the Repository
 
@@ -105,7 +105,7 @@ pip install -r requirements.txt
 python3 ddos_detector.py --help
 ```
 
-## 🎯 Quick Start
+## Quick Start
 
 ### Basic Detection (CLI Dashboard)
 
@@ -134,7 +134,7 @@ Then open http://localhost:5001 in your browser.
 sudo venv/bin/python3 scripts/simulate_attack.py --target 192.168.1.100 --type syn --count 200
 ```
 
-## 📊 Usage Examples
+## Usage Examples
 
 ### Monitor Specific Interface
 
@@ -177,7 +177,7 @@ cat logs/ddos_events.json | jq
 sudo bash scripts/unblock_all.sh
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -212,7 +212,7 @@ sudo bash scripts/unblock_all.sh
 └─────────────────┘
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Pydos/
@@ -247,7 +247,7 @@ Pydos/
 
 See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed structure explanation.
 
-## 🔍 Detection Logic
+## Detection Logic
 
 ### Threshold-Based Detection
 
@@ -273,7 +273,7 @@ When an attack is detected:
 3. Event is recorded in JSON format
 4. Dashboard is updated with blocked IP
 
-## 🎨 Dashboard Features
+## Dashboard Features
 
 ### CLI Dashboard (Rich)
 
@@ -294,7 +294,7 @@ When an attack is detected:
 - **API Endpoints**: RESTful access to system data
 - **Auto-refresh**: Updates every 2 seconds
 
-## 🔌 API Reference
+## API Reference
 
 ### Health Check
 ```bash
@@ -353,7 +353,7 @@ sudo hping3 --udp -p 53 --flood <target-ip>
 
 ## 🛡️ Security Considerations
 
-⚠️ **Important Security Notes**:
+**Important Security Notes**:
 
 1. **Root Access**: System requires root/sudo for:
    - Packet capture (Scapy)
@@ -372,7 +372,7 @@ sudo hping3 --udp -p 53 --flood <target-ip>
    - Use `iptables-save` for persistence
    - Consider impact on existing firewall rules
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Permission Denied Error
 
@@ -413,7 +413,7 @@ python3 src/dashboard.py --port 5001
 
 See [docs/WINDOWS_TESTING_GUIDE.md](docs/WINDOWS_TESTING_GUIDE.md) for Windows-specific instructions and VirtualBox setup guide.
 
-## 📚 Documentation
+## Documentation
 
 Detailed documentation for each phase:
 
@@ -423,7 +423,7 @@ Detailed documentation for each phase:
 - [Phase 4: Mitigation Module](docs/PHASE4_COMPLETE.md)
 - [Phase 6: Logging & Monitoring](docs/PHASE6_COMPLETE.md)
 
-## 🚧 Future Enhancements (Phase 8)
+## Future Enhancements (Phase 8)
 
 - [ ] Machine Learning model integration
 - [ ] Support for more attack types (HTTP floods, DNS amplification)
@@ -432,7 +432,7 @@ Detailed documentation for each phase:
 - [ ] Distributed deployment support
 - [ ] Advanced anomaly detection algorithms
 
-## 👥 Contributing
+## Contributing
 
 This is an academic project for BSIT degree. For contributions:
 
@@ -441,24 +441,24 @@ This is an academic project for BSIT degree. For contributions:
 3. Make your changes
 4. Submit a pull request
 
-## 📄 License
+## License
 
 This project is developed as part of an academic curriculum.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Scapy**: Powerful packet manipulation library
 - **Rich**: Beautiful terminal formatting
 - **Flask**: Lightweight web framework
 - **Chart.js**: Beautiful charts and graphs
 
-## 📞 Contact
+## Contact
 
 For questions or issues, please open an issue on GitHub.
 
 ---
 
-**⚠️ Disclaimer**: This tool is for educational and authorized testing purposes only. Unauthorized network monitoring or DDoS attacks are illegal. Always obtain proper authorization before testing on any network.
+**Disclaimer**: This tool is for educational and authorized testing purposes only. Unauthorized network monitoring or DDoS attacks are illegal. Always obtain proper authorization before testing on any network.
 
 ## Development Phases
 
@@ -492,15 +492,11 @@ Your active network interface: **wlp1s0**
 
 ## Safety & Ethics
 
-⚠️ **Important**: This tool is for educational purposes and authorized security testing only.
+**Important**: This tool is for educational purposes and authorized security testing only.
 - Only test on networks you own or have explicit permission to test
 - Never use attack simulation tools on production systems
 - Follow responsible disclosure practices
 - Comply with all applicable laws and regulations
-
-## License
-
-Educational Project - Please use responsibly
 
 ## Support
 
