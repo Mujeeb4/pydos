@@ -58,7 +58,7 @@ def print_menu():
 {Colors.GREEN}[1]{Colors.END} Start DDoS Detector (CLI Dashboard)
 {Colors.GREEN}[2]{Colors.END} Start Web Dashboard
 {Colors.GREEN}[3]{Colors.END} Launch Complete Environment (Detector + Dashboard + Attack Sim)
-{Colors.GREEN}[4]{Colors.END} Simulate Attack (Quick Launch)
+{Colors.GREEN}[4]{Colors.END} Simulate DDoS Attack (Quick Launch)
 {Colors.GREEN}[5]{Colors.END} View System Configuration
 {Colors.GREEN}[6]{Colors.END} View Logs
 {Colors.GREEN}[7]{Colors.END} Clean Firewall Rules (Linux only)
@@ -362,15 +362,40 @@ def run_both():
     attack = input(f"\n{Colors.CYAN}Launch attack simulation now? (yes/no): {Colors.END}").strip().lower()
     
     if attack == 'yes':
-        print(f"\n{Colors.BOLD}Attack Types:{Colors.END}")
-        print(f"{Colors.GREEN}[1]{Colors.END} SYN Flood")
-        print(f"{Colors.GREEN}[2]{Colors.END} Packet Flood")
-        print(f"{Colors.GREEN}[3]{Colors.END} UDP Flood")
+        # Ask for DoS or DDoS attack
+        print(f"\n{Colors.BOLD}Select Attack Mode:{Colors.END}")
+        print(f"{Colors.GREEN}[1]{Colors.END} DoS Attack (single-source attack)")
+        print(f"{Colors.GREEN}[2]{Colors.END} DDoS Attack (distributed multi-source attack)")
         
-        choice = input(f"\n{Colors.CYAN}Select attack type (1-3): {Colors.END}").strip()
+        attack_mode = input(f"\n{Colors.CYAN}Select mode (1-2, default: 1): {Colors.END}").strip() or '1'
         
-        attack_types = {'1': 'syn', '2': 'packet', '3': 'udp'}
-        attack_type = attack_types.get(choice, 'syn')
+        if attack_mode == '2':
+            # DDoS attack types
+            print(f"\n{Colors.BOLD}DDoS Attack Types:{Colors.END}")
+            print(f"{Colors.GREEN}[1]{Colors.END} Distributed SYN Flood")
+            print(f"{Colors.GREEN}[2]{Colors.END} Distributed UDP Flood")
+            print(f"{Colors.GREEN}[3]{Colors.END} Distributed ICMP Flood")
+            print(f"{Colors.GREEN}[4]{Colors.END} Low-and-Slow Attack")
+            print(f"{Colors.GREEN}[5]{Colors.END} Sudden Spike Attack")
+            print(f"{Colors.GREEN}[6]{Colors.END} Multi-Vector Attack")
+            
+            choice = input(f"\n{Colors.CYAN}Select attack type (1-6): {Colors.END}").strip()
+            
+            ddos_attack_types = {'1': 'syn', '2': 'udp', '3': 'icmp', '4': 'lowslow', '5': 'spike', '6': 'multi'}
+            attack_type = ddos_attack_types.get(choice, 'multi')
+            attack_script = 'scripts/simulate_ddos.py'
+        else:
+            # DoS attack types
+            print(f"\n{Colors.BOLD}DoS Attack Types:{Colors.END}")
+            print(f"{Colors.GREEN}[1]{Colors.END} SYN Flood")
+            print(f"{Colors.GREEN}[2]{Colors.END} Packet Flood")
+            print(f"{Colors.GREEN}[3]{Colors.END} UDP Flood")
+            
+            choice = input(f"\n{Colors.CYAN}Select attack type (1-3): {Colors.END}").strip()
+            
+            dos_attack_types = {'1': 'syn', '2': 'packet', '3': 'udp'}
+            attack_type = dos_attack_types.get(choice, 'syn')
+            attack_script = 'scripts/simulate_attack.py'
         
         # Import utilities for IP detection
         try:
@@ -407,7 +432,10 @@ def run_both():
             target_ip = input(f"{Colors.CYAN}Enter target IP: {Colors.END}").strip() or "127.0.0.1"
         
         # Launch attack simulation in new terminal
-        attack_cmd = f'sudo "{python_exec}" scripts/simulate_attack.py --target {target_ip} --type {attack_type} --count 200'
+        if attack_mode == '2':
+            attack_cmd = f'sudo "{python_exec}" {attack_script} --target {target_ip} --type {attack_type} --sources 100'
+        else:
+            attack_cmd = f'sudo "{python_exec}" {attack_script} --target {target_ip} --type {attack_type} --count 200'
         
         print(f"\n{Colors.YELLOW}Launching {attack_type.upper()} flood attack in new terminal...{Colors.END}")
         if open_new_terminal(attack_cmd, f"{attack_type.upper()} Attack", use_sudo=False):
@@ -430,8 +458,8 @@ def run_both():
 
 
 def simulate_attack():
-    """Run attack simulation in a new terminal"""
-    print(f"\n{Colors.CYAN}{Colors.BOLD}Attack Simulation - Quick Launch{Colors.END}")
+    """Run DDoS attack simulation in a new terminal"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}DDoS Attack Simulation - Quick Launch{Colors.END}")
     print("=" * 70)
     
     if platform.system() != 'Linux':
@@ -446,24 +474,27 @@ def simulate_attack():
         input(f"\n{Colors.CYAN}Press Enter to continue...{Colors.END}")
         return
     
-    script_path = PROJECT_ROOT / "scripts" / "simulate_attack.py"
+    script_path = PROJECT_ROOT / "scripts" / "simulate_ddos.py"
     
     if not script_path.exists():
-        print(f"{Colors.RED}Error: simulate_attack.py not found at {script_path}{Colors.END}")
+        print(f"{Colors.RED}Error: simulate_ddos.py not found at {script_path}{Colors.END}")
         input(f"\n{Colors.CYAN}Press Enter to continue...{Colors.END}")
         return
     
     print(f"""
-{Colors.CYAN}This will launch the attack simulation in a NEW terminal window.{Colors.END}
+{Colors.CYAN}This will launch the DDoS attack simulation in a NEW terminal window.{Colors.END}
 {Colors.GREEN}Your detector and dashboard (if running) will continue running.{Colors.END}
 
 {Colors.YELLOW}Tip: Use option [3] to launch detector + dashboard + attack all at once.{Colors.END}
 """)
     
-    print(f"\n{Colors.BOLD}Attack Types:{Colors.END}")
-    print(f"{Colors.GREEN}[1]{Colors.END} SYN Flood")
-    print(f"{Colors.GREEN}[2]{Colors.END} Packet Flood")
-    print(f"{Colors.GREEN}[3]{Colors.END} UDP Flood")
+    print(f"\n{Colors.BOLD}DDoS Attack Types:{Colors.END}")
+    print(f"{Colors.GREEN}[1]{Colors.END} Distributed SYN Flood")
+    print(f"{Colors.GREEN}[2]{Colors.END} Distributed UDP Flood")
+    print(f"{Colors.GREEN}[3]{Colors.END} Distributed ICMP Flood")
+    print(f"{Colors.GREEN}[4]{Colors.END} Low-and-Slow Attack")
+    print(f"{Colors.GREEN}[5]{Colors.END} Sudden Spike Attack")
+    print(f"{Colors.GREEN}[6]{Colors.END} Multi-Vector Attack")
     print(f"{Colors.GREEN}[0]{Colors.END} Back to main menu")
     
     choice = input(f"\n{Colors.CYAN}Select attack type: {Colors.END}").strip()
@@ -471,20 +502,20 @@ def simulate_attack():
     if choice == '0':
         return
     
-    attack_types = {'1': 'syn', '2': 'packet', '3': 'udp'}
-    attack_type = attack_types.get(choice, 'syn')
+    attack_types = {'1': 'syn', '2': 'udp', '3': 'icmp', '4': 'lowslow', '5': 'spike', '6': 'multi'}
+    attack_type = attack_types.get(choice, 'multi')
     
     target = input(f"{Colors.CYAN}Enter target IP (default: 127.0.0.1): {Colors.END}").strip() or "127.0.0.1"
-    count = input(f"{Colors.CYAN}Enter packet count (default: 200): {Colors.END}").strip() or "200"
+    sources = input(f"{Colors.CYAN}Enter number of spoofed sources (default: 100): {Colors.END}").strip() or "100"
     
-    print(f"\n{Colors.YELLOW}Launching {attack_type.upper()} flood attack in new terminal...{Colors.END}")
-    print(f"{Colors.YELLOW}Target: {target}, Count: {count}{Colors.END}\n")
+    print(f"\n{Colors.YELLOW}Launching {attack_type.upper()} DDoS attack in new terminal...{Colors.END}")
+    print(f"{Colors.YELLOW}Target: {target}, Sources: {sources}{Colors.END}\n")
     
     python_exec = get_python_executable()
-    attack_cmd = f'sudo "{python_exec}" scripts/simulate_attack.py --target {target} --type {attack_type} --count {count}'
+    attack_cmd = f'sudo "{python_exec}" scripts/simulate_ddos.py --target {target} --type {attack_type} --sources {sources}'
     
-    if open_new_terminal(attack_cmd, "Attack Simulation"):
-        print(f"{Colors.GREEN}✓ Attack simulation launched in new terminal!{Colors.END}")
+    if open_new_terminal(attack_cmd, "DDoS Attack Simulation"):
+        print(f"{Colors.GREEN}✓ DDoS attack simulation launched in new terminal!{Colors.END}")
         print(f"{Colors.CYAN}Check the detector terminal and web dashboard for results.{Colors.END}")
     else:
         print(f"{Colors.RED}✗ Failed to open new terminal{Colors.END}")
@@ -497,9 +528,9 @@ def simulate_attack():
                 str(script_path),
                 '--target', target,
                 '--type', attack_type,
-                '--count', count
+                '--sources', sources
             ])
-            print(f"\n{Colors.GREEN}✓ Attack simulation completed!{Colors.END}")
+            print(f"\n{Colors.GREEN}✓ DDoS attack simulation completed!{Colors.END}")
         except KeyboardInterrupt:
             print(f"\n{Colors.YELLOW}Attack stopped.{Colors.END}")
         except Exception as e:
