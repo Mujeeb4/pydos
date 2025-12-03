@@ -1,10 +1,15 @@
 """
-Attack Simulation Script for Testing DDoS Detection System
+DoS Attack Simulation Script for Testing Detection System
 
-This script simulates various types of DDoS attacks for testing purposes.
-Use this to verify that your detection and mitigation system works correctly.
+This script simulates single-source DoS attacks for testing purposes.
+For distributed (DDoS) attacks from multiple IPs, use simulate_ddos.py instead.
+
+Use this to verify that your per-IP detection and mitigation works correctly.
 
 IMPORTANT: Only use this on systems you own or have permission to test!
+
+Usage:
+    sudo python3 scripts/simulate_attack.py --target 127.0.0.1 --type syn
 """
 
 from scapy.all import IP, TCP, UDP, ICMP, send, sr1
@@ -12,9 +17,30 @@ import sys
 import time
 import argparse
 import ipaddress
-import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# =============================================================================
+# CONFIGURATION - Load from config/config.py
+# =============================================================================
+try:
+    from config.config import (
+        DEFAULT_ATTACK_TARGET,
+        DEFAULT_ATTACK_PORT,
+        DEFAULT_PACKET_COUNT,
+        DEFAULT_PACKET_DELAY,
+    )
+    CONFIG_LOADED = True
+except ImportError:
+    CONFIG_LOADED = False
+    DEFAULT_ATTACK_TARGET = "127.0.0.1"
+    DEFAULT_ATTACK_PORT = 80
+    DEFAULT_PACKET_COUNT = 200
+    DEFAULT_PACKET_DELAY = 0.001
 
 
 def validate_ip_address(ip: str) -> bool:
@@ -315,17 +341,17 @@ IMPORTANT: Only use on systems you own or have permission to test!
         """
     )
     
-    parser.add_argument('--target', '-t', required=True, 
-                       help='Target IP address')
+    parser.add_argument('--target', '-t', default=DEFAULT_ATTACK_TARGET, 
+                       help=f'Target IP address (default: {DEFAULT_ATTACK_TARGET})')
     parser.add_argument('--type', '-T', choices=['syn', 'packet', 'udp', 'all'], 
                        default='all',
                        help='Attack type (default: all - launches all attacks simultaneously)')
-    parser.add_argument('--port', '-p', type=int, default=80,
-                       help='Target port (default: 80)')
-    parser.add_argument('--count', '-c', type=int, default=200,
-                       help='Number of packets to send per attack type (default: 200)')
-    parser.add_argument('--delay', '-d', type=float, default=0.001,
-                       help='Delay between packets in seconds (default: 0.001)')
+    parser.add_argument('--port', '-p', type=int, default=DEFAULT_ATTACK_PORT,
+                       help=f'Target port (default: {DEFAULT_ATTACK_PORT})')
+    parser.add_argument('--count', '-c', type=int, default=DEFAULT_PACKET_COUNT,
+                       help=f'Number of packets to send per attack type (default: {DEFAULT_PACKET_COUNT})')
+    parser.add_argument('--delay', '-d', type=float, default=DEFAULT_PACKET_DELAY,
+                       help=f'Delay between packets in seconds (default: {DEFAULT_PACKET_DELAY})')
     
     args = parser.parse_args()
     

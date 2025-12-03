@@ -509,7 +509,7 @@ def run_dashboard(host='0.0.0.0', port=5001, debug=False):
     print(f"📊 Dashboard: http://localhost:{port}")
     print(f"🔧 API Status: http://localhost:{port}/api/stats")
     print(f"💚 Health Check: http://localhost:{port}/health")
-    print("\n⚠️  Make sure ddos_detector.py is running to see live data!")
+    print("\n⚠️  Make sure detector.py is running to see live data!")
     print("\nPress Ctrl+C to stop the server\n")
     print("="*70)
     

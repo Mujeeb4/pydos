@@ -18,10 +18,10 @@ class TestSystemIntegration:
     """Test integration of all system components."""
     
     @patch('subprocess.run')
-    @patch('ddos_detector.sniff')
+    @patch('detector.sniff')
     def test_detector_logger_mitigator_integration(self, mock_sniff, mock_subprocess):
         """Test integration between detector, logger, and mitigator."""
-        from ddos_detector import DDoSDetector
+        from detector import DDoSDetector
         from logger import DDoSLogger
         from mitigator import Mitigator
         
@@ -45,7 +45,7 @@ class TestSystemIntegration:
     @patch('subprocess.run')
     def test_end_to_end_attack_flow(self, mock_subprocess):
         """Test complete attack detection and mitigation flow."""
-        from ddos_detector import DDoSDetector
+        from detector import DDoSDetector
         from scapy.all import IP, TCP
         
         mock_subprocess.return_value = Mock(returncode=0)
@@ -103,8 +103,8 @@ class TestAnalyzerIntegration:
 class TestConfigurationIntegration:
     """Test configuration loading and usage."""
     
-    @patch('ddos_detector.DDoSLogger')
-    @patch('ddos_detector.Mitigator')
+    @patch('detector.DDoSLogger')
+    @patch('detector.Mitigator')
     def test_load_configuration(self, mock_mitigator, mock_logger):
         """Test loading configuration from config file."""
         from config.config import (
@@ -113,7 +113,7 @@ class TestConfigurationIntegration:
             TIME_WINDOW,
             NETWORK_INTERFACE
         )
-        from ddos_detector import DDoSDetector
+        from detector import DDoSDetector
         
         # Create detector with config values
         detector = DDoSDetector(
@@ -234,10 +234,10 @@ class TestErrorHandling:
 class TestPerformanceIntegration:
     """Test performance of integrated system."""
     
-    @patch('ddos_detector.sniff')
+    @patch('detector.sniff')
     def test_high_traffic_handling(self, mock_sniff):
         """Test system handling high traffic volume."""
-        from ddos_detector import DDoSDetector
+        from detector import DDoSDetector
         from scapy.all import IP
         
         detector = DDoSDetector()

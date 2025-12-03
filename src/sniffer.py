@@ -77,7 +77,6 @@ def process_packet(packet):
 def main():
     """Main function to start the packet sniffer"""
     print("="*70)
-    print("REFINED PACKET SNIFFER - Phase 2.2 COMPLETE")
     print("="*70)
     print()
     print(f"Network Interface: {NETWORK_INTERFACE}")

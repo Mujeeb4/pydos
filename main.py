@@ -234,10 +234,10 @@ def run_detector():
         input(f"\n{Colors.CYAN}Press Enter to continue...{Colors.END}")
         return
     
-    detector_path = SRC_DIR / "ddos_detector.py"
+    detector_path = SRC_DIR / "detector.py"
     
     if not detector_path.exists():
-        print(f"{Colors.RED}Error: ddos_detector.py not found at {detector_path}{Colors.END}")
+        print(f"{Colors.RED}Error: detector.py not found at {detector_path}{Colors.END}")
         input(f"\n{Colors.CYAN}Press Enter to continue...{Colors.END}")
         return
     
@@ -332,7 +332,7 @@ def run_both():
     
     # Prepare commands for terminal launch
     # Important: Use full path to python executable from venv
-    detector_cmd = f'sudo "{python_exec}" src/ddos_detector.py'
+    detector_cmd = f'sudo "{python_exec}" src/detector.py'
     dashboard_cmd = f'"{python_exec}" src/dashboard.py'
     
     # Launch DDoS Detector in new terminal
@@ -712,7 +712,7 @@ def check_status():
     print(f"\n{Colors.BOLD}Key Files:{Colors.END}")
     key_files = [
         ('config/config.py', 'Configuration'),
-        ('src/ddos_detector.py', 'Detector'),
+        ('src/detector.py', 'Detector'),
         ('src/dashboard.py', 'Dashboard'),
         ('scripts/simulate_attack.py', 'Attack Simulator')
     ]
