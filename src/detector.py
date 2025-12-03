@@ -598,7 +598,8 @@ class UnifiedDetector:
                           udp > UDP_THRESHOLD or icmp > ICMP_THRESHOLD):
                         status = "[red]⚠️ ALERT[/red]"
                         style = "bold red"
-                    elif (count > PACKET_THRESHOLD * 0.7 or syn > SYN_THRESHOLD * 0.7):
+                    elif (count > PACKET_THRESHOLD * 0.7 or syn > SYN_THRESHOLD * 0.7 or
+                          udp > UDP_THRESHOLD * 0.7 or icmp > ICMP_THRESHOLD * 0.7):
                         status = "[yellow]⚡ WARNING[/yellow]"
                         style = "yellow"
                     else:

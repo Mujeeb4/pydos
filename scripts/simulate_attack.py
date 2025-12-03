@@ -16,7 +16,6 @@ from scapy.all import IP, TCP, UDP, ICMP, send, sr1
 import sys
 import time
 import argparse
-import ipaddress
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -42,37 +41,25 @@ except ImportError:
     DEFAULT_PACKET_COUNT = 200
     DEFAULT_PACKET_DELAY = 0.001
 
-
-def validate_ip_address(ip: str) -> bool:
-    """Validate if string is a valid IP address.
+# Import utility functions from central utils module (avoid duplication)
+try:
+    from src.utils import validate_ip_address, is_private_or_localhost
+except ImportError:
+    # Fallback if running from different directory
+    import ipaddress
+    def validate_ip_address(ip: str) -> bool:
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
     
-    Args:
-        ip (str): IP address to validate
-        
-    Returns:
-        bool: True if valid IP, False otherwise
-    """
-    try:
-        ipaddress.ip_address(ip)
-        return True
-    except ValueError:
-        return False
-
-
-def is_private_or_localhost(ip: str) -> bool:
-    """Check if IP is private or localhost.
-    
-    Args:
-        ip (str): IP address to check
-        
-    Returns:
-        bool: True if private/localhost, False otherwise
-    """
-    try:
-        ip_obj = ipaddress.ip_address(ip)
-        return ip_obj.is_private or ip_obj.is_loopback
-    except ValueError:
-        return False
+    def is_private_or_localhost(ip: str) -> bool:
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            return ip_obj.is_private or ip_obj.is_loopback
+        except ValueError:
+            return False
 
 
 def print_banner():

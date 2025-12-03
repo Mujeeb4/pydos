@@ -1,13 +1,20 @@
 """
-Phase 2.2: Refined Packet Sniffer (COMPLETE)
-Real-Time DDoS Detection System - Traffic Capture Module
+Packet Sniffer Utility - Debugging & Visualization Tool
 
-This script captures network packets in real-time using Scapy and
-extracts detailed information from IP and TCP layers including:
-- Source and destination IP addresses
-- Protocol information
-- TCP ports and flags
-- Packet summaries
+PURPOSE: Standalone utility to VISUALIZE network traffic in real-time.
+This is a DEBUGGING TOOL, not the main detection system.
+
+DIFFERENCE FROM detector.py:
+- detector.py: Detects attacks, tracks thresholds, blocks IPs
+- sniffer.py: Just DISPLAYS packets for debugging/learning purposes
+
+USE CASES:
+- Debugging network issues
+- Learning about packet structure
+- Verifying network interface works
+- Visualizing traffic without detection
+
+Run this to see what packets look like before testing the detector.
 """
 
 from scapy.all import IP, TCP, UDP, ICMP, sniff

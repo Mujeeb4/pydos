@@ -445,7 +445,7 @@ def sudden_spike_attack(target_ip: str, target_port: int = 80,
     print(f"   New IPs per second: {num_sources / duration_seconds:.0f}")
     print()
     
-    source_ips = generate_random_ip()  # Use completely random IPs for spike
+    # Use completely random IPs for spike (not clustered like botnet)
     source_ips = [generate_random_ip() for _ in range(num_sources)]
     
     sent = 0

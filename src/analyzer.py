@@ -1,7 +1,20 @@
 """
-Basic analyzer module for traffic analysis
+Traffic Analyzer Module - Historical Analysis & Anomaly Detection
 
-This module provides analysis functions for captured network traffic.
+PURPOSE: This module provides HISTORICAL traffic analysis and anomaly detection
+based on baseline patterns. It is SEPARATE from the real-time detector.
+
+DIFFERENCE FROM detector.py:
+- detector.py: Real-time detection using fixed thresholds, blocks IPs immediately
+- analyzer.py: Historical analysis, builds baseline, detects deviations from normal
+
+USE CASES:
+- Post-incident analysis
+- Building traffic baselines
+- Statistical anomaly detection
+- Traffic pattern profiling
+
+This is an OPTIONAL component, not required for basic detection.
 """
 
 from collections import Counter, defaultdict
