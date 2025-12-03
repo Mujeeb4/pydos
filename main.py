@@ -32,6 +32,11 @@ class Colors:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
+# Attack type mappings
+DOS_ATTACK_TYPES = {'1': 'syn', '2': 'packet', '3': 'udp'}
+# DDoS uses 'multi' as default since it's the most comprehensive simulation
+DDOS_ATTACK_TYPES = {'1': 'syn', '2': 'udp', '3': 'icmp', '4': 'lowslow', '5': 'spike', '6': 'multi'}
+
 def clear_screen():
     """Clear the terminal screen"""
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -381,8 +386,7 @@ def run_both():
             
             choice = input(f"\n{Colors.CYAN}Select attack type (1-6): {Colors.END}").strip()
             
-            ddos_attack_types = {'1': 'syn', '2': 'udp', '3': 'icmp', '4': 'lowslow', '5': 'spike', '6': 'multi'}
-            attack_type = ddos_attack_types.get(choice, 'multi')
+            attack_type = DDOS_ATTACK_TYPES.get(choice, 'multi')
             attack_script = 'scripts/simulate_ddos.py'
         else:
             # DoS attack types
@@ -393,8 +397,7 @@ def run_both():
             
             choice = input(f"\n{Colors.CYAN}Select attack type (1-3): {Colors.END}").strip()
             
-            dos_attack_types = {'1': 'syn', '2': 'packet', '3': 'udp'}
-            attack_type = dos_attack_types.get(choice, 'syn')
+            attack_type = DOS_ATTACK_TYPES.get(choice, 'syn')
             attack_script = 'scripts/simulate_attack.py'
         
         # Import utilities for IP detection
@@ -502,8 +505,7 @@ def simulate_attack():
     if choice == '0':
         return
     
-    attack_types = {'1': 'syn', '2': 'udp', '3': 'icmp', '4': 'lowslow', '5': 'spike', '6': 'multi'}
-    attack_type = attack_types.get(choice, 'multi')
+    attack_type = DDOS_ATTACK_TYPES.get(choice, 'multi')
     
     target = input(f"{Colors.CYAN}Enter target IP (default: 127.0.0.1): {Colors.END}").strip() or "127.0.0.1"
     sources = input(f"{Colors.CYAN}Enter number of spoofed sources (default: 100): {Colors.END}").strip() or "100"
