@@ -144,6 +144,18 @@ def open_new_terminal(command, title="DDoS Tool", use_sudo=False):
             return True
         except Exception as e:
             print(f"{Colors.YELLOW}gnome-terminal failed: {e}{Colors.END}")
+
+    # Try x-terminal-emulator (Debian/Ubuntu standard alternative)
+    if shutil.which("x-terminal-emulator"):
+        try:
+            # -e is standard for x-terminal-emulator
+            cmd = ["x-terminal-emulator", "-e", f"bash -c '{full_cmd}'"]
+            subprocess.Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+            print(f"{Colors.GREEN} Launched using x-terminal-emulator{Colors.END}")
+            time.sleep(0.5)
+            return True
+        except Exception:
+            pass
     
     # Try other terminals
     other_terminals = [
