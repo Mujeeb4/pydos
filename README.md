@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="pydos_logo.png" alt="PyDoS Logo" width="400">
+</p>
+
 # Enhanced Real-Time DDoS Detection System v2.0
 
 A Python-based real-time DDoS detection and mitigation system with **10 advanced detection capabilities** and **21 attack simulation types**. Monitors network traffic in real-time, detects sophisticated DDoS attacks using multi-layered analysis, automatically mitigates threats, and provides comprehensive monitoring dashboards.
